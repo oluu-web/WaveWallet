@@ -21,7 +21,7 @@ exports.getUserProfile = async (req, res) => {
 
     const userProfile = {
       accountNumber: user.accountNumber,
-      name: user.name,
+      name: user.firstName+user.lastName,
       email: user.email,
       // Add other user properties you want to include in the profile
     };
@@ -42,7 +42,8 @@ exports.updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'Account not found' });
     }
 
-    user.name = req.body.name || user.name;
+    user.firstName = req.body.firstName || user.firstName;
+    user.lastname = req.body.lastName || user.lastName
     user.email = req.body.email || user.email;
 
     // Save the updated data
