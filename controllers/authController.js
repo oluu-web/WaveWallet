@@ -1,44 +1,12 @@
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
-const commonPasswords = require('../Passwords');
+const { validationResult } = require('express-validator');
+const { registrationValidationRules } = require('../validation')
 
 //Define validation rules
 
-const registrationValidationRules = [
- body('name').notEmpty().withMessage('Name is required'),
- body('email').isEmail().withMessage('Invalid email format'),
- body('password')
- .isLength({min: 8})
- .withMessage('Password must be at least 8 characters long')
- .custom(async (password, { req }) => {
-  if (!/[A-Z]/.test(password)) {
-   throw new Error('Password must contain at least one uppercase letter');
-  }
-
-  if(!/[a-z]/.test(password)) {
-   throw new Error('Password must contsin at least one lowercase letter')
-  }
-
-  if (!/[!@#$%^&*()_+{}\[\]:;<>,.?~\\-]/.test(password)) {
-   throw new Error('Password must contain one of these symbols: !@#$%^&*()_+{}\[\]:;<>,.?~\\-')
-  }
-
-  if (!/\d/.test(password)) {
-   throw new Error('Password must contain at least one digit');
-  }
-
-  //check if password is a common password
-  if (commonPasswords.includes(password.toLowerCase())) {
-   throw new Error('Password is commonly used and not allowed');
-  }
-
-  return true
- }),
-];
-
-exports.registerUJser = async (req, res) => {
+exports.registerUser = async (req, res) => {
  try {
   const errors = validationResult(req);
 
@@ -59,9 +27,9 @@ exports.registerUJser = async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  user = new User ({
+  user = new User ({ 
    firstName,
-   lastNane,
+   lastName,
    email,
    password: hashedPassword,
   });
@@ -71,7 +39,7 @@ exports.registerUJser = async (req, res) => {
   //Generate JWT for authentication
   const payload = {
    user: {
-    id: user.accountNumber,
+    accountNumber: user.accountNumber,
    },
   };
 
@@ -117,7 +85,7 @@ exports.loginUser = async (req, res) => {
     // Generate a JSON Web Token (JWT) for authentication
     const payload = {
       user: {
-        id: user.id,
+        accountNumber: user.accountNumber,
       },
     };
 
