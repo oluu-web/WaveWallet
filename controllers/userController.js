@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const bcrypt = require('bcrypt');
 
 exports.registerUser = async (req, res) => {
   try {
@@ -64,5 +65,68 @@ exports.deleteUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Failed to delete user' });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    //get authenticated user
+    const user = await User.findOne({accountNumber : req.user.accountNumber});
+
+    if (!user) {
+      return res.status(404).json({message :'Account not found'});
+    }
+
+    //Check if old password matches current password
+    const isMatch = await bcrypt.compare(req.body.oldPassword, user.password);
+    if(!isMatch) {
+      return res.status(400).json({message : 'Old password in incorrect'});
+    }
+
+    //Hash and update password
+    const newPasswordHash = await bcrypt.hash(req.body.newPassword, 10);
+    user.password = newPasswordHash;
+
+    await user.save();
+
+    res.json({ message : 'Password changed successfully'});
+  } catch (error){
+    console.error(error);
+    res.status(500).json({ message : 'Failed to change password'});
+  }
+}
+
+exports.initiatePasswordReset = async (req, res) => {
+  try {
+    const user = await User.findOne({ email : req.body,email});
+
+    if (!user) {
+      return res.status(404).json({ message : 'Account not found'});
+    }
+
+    res.json({ message : 'Password reset email sent successfully'});
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({ message : 'Failed to initiate password reset'});
+  }
+}
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({ email : req.body.email })
+
+    if (!user) {
+      return res.status(404).json({ message : 'Account not found'});
+    }
+    const newPasswordHash = await bcrypt.hash(req.body.newPassword, 10);
+    user.password = newPasswordHash;
+
+    // Save the updated password
+    await user.save();
+
+    res.json({ message: 'Password reset successfully' });
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({ message : 'Failed to reset password'});
   }
 };
